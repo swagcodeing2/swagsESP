@@ -1,0 +1,114 @@
+local players = game:GetService("Players")
+
+local function createHighlight(character)
+    local highlight = character:FindFirstChild("Highlight")
+    if not highlight then
+        highlight = Instance.new("Highlight")
+        highlight.Adornee = character
+        highlight.FillColor = Color3.new(0.5, 0.5, 0.5) -- White color for the highlight
+        highlight.OutlineColor = Color3.new(1, 1, 1) -- Black outline color
+        highlight.Parent = character
+    end
+end
+
+local function removeHighlight(character)
+    local highlight = character:FindFirstChild("Highlight")
+    if highlight then
+        highlight:Destroy()
+    end
+end
+
+local function createTextLabel(character)
+    local head = character:FindFirstChild("Head")
+    if head then
+        local billboardGui = Instance.new("BillboardGui")
+        billboardGui.Adornee = head
+        billboardGui.Size = UDim2.new(0, 100, 0, 50)
+        billboardGui.StudsOffset = Vector3.new(0, 2, 0)
+        billboardGui.AlwaysOnTop = true
+
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = character.Name
+        textLabel.TextColor3 = Color3.new(1, 1, 1) -- White text color
+        textLabel.TextScaled = true
+        textLabel.Parent = billboardGui
+
+        billboardGui.Parent = head
+    end
+end
+
+local function removeTextLabel(character)
+    local head = character:FindFirstChild("Head")
+    if head then
+        local billboardGui = head:FindFirstChildOfClass("BillboardGui")
+        if billboardGui then
+            billboardGui:Destroy()
+        end
+    end
+end
+
+local espEnabled = true
+
+local function toggleESP()
+    espEnabled = not espEnabled
+    print("ESP Enabled:", espEnabled)
+    for _, player in pairs(players:GetPlayers()) do
+        if player.Character then
+            if espEnabled then
+                print("Adding ESP to:", player.Name)
+                onCharacterAdded(player.Character)
+            else
+                print("Removing ESP from:", player.Name)
+                onCharacterRemoving(player.Character)
+            end
+        end
+    end
+end
+
+local function onCharacterAdded(character)
+    if espEnabled then
+        createHighlight(character)
+        createTextLabel(character)
+    end
+end
+
+local function onCharacterRemoving(character)
+    removeHighlight(character)
+    removeTextLabel(character)
+end
+
+local function onPlayerAdded(player)
+    if espEnabled and player.Character then
+        onCharacterAdded(player.Character)
+    end
+    player.CharacterAdded:Connect(onCharacterAdded)
+    player.CharacterRemoving:Connect(onCharacterRemoving)
+end
+
+local function onPlayerRemoving(player)
+    if player.Character then
+        onCharacterRemoving(player.Character)
+    end
+end
+
+players.PlayerAdded:Connect(onPlayerAdded)
+players.PlayerRemoving:Connect(onPlayerRemoving)
+
+for _, player in pairs(players:GetPlayers()) do
+    onPlayerAdded(player)
+end
+
+local UserInputService = game:GetService("UserInputService")
+local toggleKey = Enum.KeyCode.E
+
+local function onInputBegan(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == toggleKey then
+        toggleESP()
+    end
+end
+
+UserInputService.InputBegan:Connect(onInputBegan)
+
+-- Example usage: toggleESP() to enable/disable ESP
